@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import '../data/database.dart';
 import '../models/tarea.dart';
+
 
 // Pantalla base SIN persistencia ni operaciones CRUD implementadas.
 // Conserva las indicaciones TODO para orientar tu trabajo.
 class TareasPage extends StatefulWidget {
-  const TareasPage({super.key});
+  final AppDatabase database;
+
+  const TareasPage({super.key, required this.database});
 
   @override
   State<TareasPage> createState() => _TareasPageState();
@@ -13,27 +17,41 @@ class TareasPage extends StatefulWidget {
 class _TareasPageState extends State<TareasPage> {
   final TextEditingController _tituloController = TextEditingController();
 
-  List<Tarea> _tareas = [];
+  //List<Tarea> _tareas = [];
+  late Stream<List<TareaModelo>> _tareasStream;
 
   @override
   void initState() {
     super.initState();
 
+    _tareasStream = widget.database.consultarTareas();
   }
 
-  void _agregarTarea() {
-    _pendiente('Implementar registro de tarea');
+  Future<void> _agregarTarea() async{
+    final resultado = await widget.database.agregarTarea(_tituloController.text);
+    if (!mounted) return;
+    if(resultado == null){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingrese un titulo valido'),),
+      );
+      return;
+    }
+
+    _tituloController.clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Nueva tarea agregada correctamente'),),
+    );
   }
 
-  void _alternarCompletada(Tarea tarea, bool completada) {
+  void _alternarCompletada(TareaModelo tarea, bool completada) {
     _pendiente('Implementar actualización de tarea');
   }
 
-  void _editarTarea(Tarea tarea) {
+  void _editarTarea(TareaModelo tarea) {
     _pendiente('Implementar edición de título');
   }
 
-  void _eliminarTarea(Tarea tarea) {
+  void _eliminarTarea(TareaModelo tarea) {
     _pendiente('Implementar eliminación de tarea');
   }
 
@@ -75,21 +93,34 @@ class _TareasPageState extends State<TareasPage> {
             const Text('Mis tareas', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 8),
             Expanded(
-              child: _tareas.isEmpty
-                  ? const Center(child: Text('Todavía no hay tareas guardadas'))
-                  : ListView.builder(
-                      itemCount: _tareas.length,
+              //child: _tareas.isEmpty
+              child: StreamBuilder<List<TareaModelo>>(
+                stream: _tareasStream,
+                builder: (context, snapshot){
+                  if (snapshot.hasError){
+                    return Center(
+                      child: Text('Error al consultar tareas')
+                    );
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting){
+                    return const Center(
+                      child: CircularProgressIndicator()
+                    );
+                  }
+
+                  final tareas = snapshot.data ?? [];
+                  if(tareas.isEmpty){
+                    return const Center(child: Text('Todavía no hay tareas guardadas'));
+                  }
+                  return ListView.builder(
+                      itemCount: tareas.length,
                       itemBuilder: (context, index) {
-                        final tarea = _tareas[index];
+                        final tarea = tareas[index];
                         return Card(
                           child: ListTile(
                             leading: Checkbox(
                               value: tarea.completada,
-                              onChanged: (valor) {
-                                if (valor != null) {
-                                  _alternarCompletada(tarea, valor);
-                                }
-                              },
+                              onChanged: null,
                             ),
                             title: Text(tarea.titulo),
                             subtitle: Text('ID: ${tarea.id}'),
@@ -111,7 +142,9 @@ class _TareasPageState extends State<TareasPage> {
                           ),
                         );
                       },
-                    ),
+                    );
+                },
+              ),
             ),
           ],
         ),

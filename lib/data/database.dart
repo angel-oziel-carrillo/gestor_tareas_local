@@ -34,4 +34,27 @@ class AppDatabase extends _$AppDatabase{
       }).toList();
     });
   }
+
+  //F3
+  Future<int> actualizarTitulo(int id, String titulo) async{
+    final texto = titulo.trim();
+    if(texto.isEmpty){
+      return 0;
+    }
+    
+    final filasActualizadas = await (update(tareas)..where((tabla) => tabla.id.equals(id))).write(TareasCompanion(titulo: Value(texto),),);
+    return filasActualizadas;
+  }
+
+  //F4
+  Future<int> actualizarEstado(int id, bool completada) async {
+    final filasActualizadas = await (update(tareas)..where((tabla) => tabla.id.equals(id))).write(TareasCompanion(completada: Value(completada),),);
+    return filasActualizadas;
+  }
+
+  //F5
+  Future<int> eliminarTarea(int id) async {
+    final filasEliminadas = await (delete(tareas)..where((tabla) => tabla.id.equals(id))).go();
+    return filasEliminadas;
+  }
 }

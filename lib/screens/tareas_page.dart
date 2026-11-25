@@ -43,16 +43,109 @@ class _TareasPageState extends State<TareasPage> {
     );
   }
 
-  void _alternarCompletada(TareaModelo tarea, bool completada) {
-    _pendiente('Implementar actualización de tarea');
+  Future<void> _alternarCompletada(TareaModelo tarea, bool completada) async{
+    try{
+      final resultado = await widget.database.actualizarEstado(tarea.id, completada,);
+
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            (resultado > 0) ? 'Estado actualizado correctamente' : 'La tarea no se encontró',),
+        ),
+      );
+    }
+    catch(e) {
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar el estado',),
+        ),
+      );
+    }
   }
 
-  void _editarTarea(TareaModelo tarea) {
-    _pendiente('Implementar edición de título');
+  Future<void> _editarTarea(TareaModelo tarea) async{
+    final controller = TextEditingController(text: tarea.titulo);
+    final nuevoTitulo = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Editar tarea'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Nuevo titulo',
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (valor){
+              Navigator.pop(context, valor);
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: (){
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: (){
+                Navigator.pop(context, controller.text);
+              },
+              child: const Text('Guardar'),
+            )
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
+
+    if(!mounted || nuevoTitulo == null) return;
+
+    try {
+      final resultado = await widget.database.actualizarTitulo(tarea.id, nuevoTitulo);
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            (resultado > 0) ? 'Tarea actualizada correctamente' : 'Error al actualizar la tarea',
+          ),
+        ),
+      );
+    }
+    catch(e) {
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar la tarea',),
+        ),
+      );
+    }
   }
 
-  void _eliminarTarea(TareaModelo tarea) {
-    _pendiente('Implementar eliminación de tarea');
+  void _eliminarTarea(TareaModelo tarea) async{
+    try{
+      final resultado = await widget.database.eliminarTarea(tarea.id);
+
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            (resultado > 0) ? 'Tarea eliminada correctamente' : 'La tarea no se encontró',),
+        ),
+      );
+    }
+    catch(e) {
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar la tarea',),
+        ),
+      );
+    }
   }
 
   void _pendiente(String mensaje) {
@@ -120,7 +213,11 @@ class _TareasPageState extends State<TareasPage> {
                           child: ListTile(
                             leading: Checkbox(
                               value: tarea.completada,
-                              onChanged: null,
+                              onChanged: (valor) {
+                                if(valor!=null){
+                                  _alternarCompletada(tarea, valor);
+                                }
+                              },
                             ),
                             title: Text(tarea.titulo),
                             subtitle: Text('ID: ${tarea.id}'),

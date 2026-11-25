@@ -28,19 +28,29 @@ class _TareasPageState extends State<TareasPage> {
   }
 
   Future<void> _agregarTarea() async{
-    final resultado = await widget.database.agregarTarea(_tituloController.text);
-    if (!mounted) return;
-    if(resultado == null){
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingrese un titulo valido'),),
-      );
-      return;
-    }
+    try{
+      final resultado = await widget.database.agregarTarea(_tituloController.text);
+      if (!mounted) return;
+      if(resultado == null){
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ingrese un titulo valido'),),
+        );
+        return;
+      }
 
-    _tituloController.clear();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nueva tarea agregada correctamente'),),
-    );
+      _tituloController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nueva tarea agregada correctamente'),),
+      );
+    }
+    catch(e){
+      if(!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al agregar la tarea',),
+        ),
+      );
+    }
   }
 
   Future<void> _alternarCompletada(TareaModelo tarea, bool completada) async{
